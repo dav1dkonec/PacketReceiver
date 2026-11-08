@@ -41,10 +41,11 @@ Main options:
 |---|---|---|
 | `-p, --port` | UDP port of the test packets | 5000 |
 | `-m, --mode` | `udp`, `busy-poll`, `busy-spin`, `packet`, `xdp` | `udp` |
-| `-c, --gpio-chip`, `-l, --line` | GPIO chip and line | `/dev/gpiochip0`, 17 (pin 11) |
-| `--no-rt`, `--cpu`, `--fifo-prio` | real-time setup (affinity, SCHED_FIFO, mlockall) | on, CPU 3, 80 |
+| `-b, --busy-poll-us` | SO_BUSY_POLL budget in microseconds (busy-poll mode) | 50 |
+| `-g, --gpio-chip`, `-l, --line` | GPIO chip and line | `/dev/gpiochip0`, 17 (pin 11) |
+| `-n, --no-rt`, `-c, --cpu`, `-f, --fifo-prio` | real-time setup (affinity, SCHED_FIFO, mlockall) | on, CPU 3, 80 |
 | `-r, --report-every` | print statistics every N packets | 1000 |
-| `-o, --output`, `--samples` | CSV with samples, written at the end of the run | none, 1 000 000 |
+| `-o, --output`, `-s, --samples` | CSV with samples, written at the end of the run | none, 1 000 000 |
 
 Real-time setup requires root, or the `CAP_SYS_NICE` and `CAP_IPC_LOCK` capabilities.
 Without them the program exits with an error. Use `--no-rt` to measure without RT.

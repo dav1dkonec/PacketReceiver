@@ -58,15 +58,15 @@ struct Config {
  *   -p, --port <n>          UDP port (1-65535)
  *   -i, --interface <name>  network interface, e.g. eth0
  *   -m, --mode <mode>       udp | busy-poll | busy-spin | packet | xdp
- *       --busy-poll-us <n>  SO_BUSY_POLL budget in microseconds
- *   -c, --gpio-chip <path>  GPIO chip device, e.g. /dev/gpiochip0
+ *   -b, --busy-poll-us <n>  SO_BUSY_POLL budget in microseconds
+ *   -g, --gpio-chip <path>  GPIO chip device, e.g. /dev/gpiochip0
  *   -l, --line <n>          GPIO line offset
- *       --no-rt             disable real-time setup (affinity, SCHED_FIFO, mlockall)
- *       --cpu <n>           CPU core to pin the process to
- *       --fifo-prio <n>     SCHED_FIFO priority (1-99)
+ *   -n, --no-rt             disable real-time setup (affinity, SCHED_FIFO, mlockall)
+ *   -c, --cpu <n>           CPU core to pin the process to
+ *   -f, --fifo-prio <n>     SCHED_FIFO priority (1-99)
  *   -r, --report-every <n>  print statistics every n packets
  *   -o, --output <file>     save samples to CSV at the end of the run
- *       --samples <n>       capacity of the sample buffer
+ *   -s, --samples <n>       capacity of the sample buffer
  *   -h, --help              print usage and exit
  *
  * @param argc  Argument count, as passed to main().

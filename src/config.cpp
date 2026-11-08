@@ -16,16 +16,6 @@
 
 namespace {
 
-// Long options without a short variant need a value outside the char range,
-// so they cannot collide with 'p', 'c', ...
-enum LongOnlyOption : int {
-    OPT_NO_RT = 256,
-    OPT_CPU,
-    OPT_PRIO,
-    OPT_BUSY_POLL_US,
-    OPT_SAMPLES,
-};
-
 // Single source of truth for mode names: used by parsing, help and to_string().
 constexpr std::array<std::pair<RxMode, std::string_view>, 5> kModeNames{{
     {RxMode::Udp,      "udp"},
@@ -90,19 +80,19 @@ void print_usage(const char* prog)
         << "  -i, --interface <name>  network interface (default " << def.interface << ")\n"
         << "  -m, --mode <mode>       udp | busy-poll | busy-spin | packet | xdp (default "
         << to_string(def.mode) << ")\n"
-        << "      --busy-poll-us <n>  SO_BUSY_POLL budget in us (default " << def.busy_poll_us << ")\n"
+        << "  -b, --busy-poll-us <n>  SO_BUSY_POLL budget in us (default " << def.busy_poll_us << ")\n"
         << "\nGPIO:\n"
-        << "  -c, --gpio-chip <path>  GPIO chip device (default " << def.gpio_chip << ")\n"
+        << "  -g, --gpio-chip <path>  GPIO chip device (default " << def.gpio_chip << ")\n"
         << "  -l, --line <n>          GPIO line offset (default " << def.gpio_line << ")\n"
         << "\nReal-time:\n"
-        << "      --no-rt             disable real-time setup\n"
-        << "      --cpu <n>           CPU core to pin to (default " << def.cpu << ")\n"
-        << "      --fifo-prio <n>     SCHED_FIFO priority 1-99 (default " << def.priority << ")\n"
+        << "  -n, --no-rt             disable real-time setup\n"
+        << "  -c, --cpu <n>           CPU core to pin to (default " << def.cpu << ")\n"
+        << "  -f, --fifo-prio <n>     SCHED_FIFO priority 1-99 (default " << def.priority << ")\n"
         << "\nResults:\n"
         << "  -r, --report-every <n>  print statistics every n packets (default "
         << def.report_every << ")\n"
         << "  -o, --output <file>     save samples to CSV at exit (default: none)\n"
-        << "      --samples <n>       sample buffer capacity (default " << def.max_samples << ")\n"
+        << "  -s, --samples <n>       sample buffer capacity (default " << def.max_samples << ")\n"
         << "\n  -h, --help              print this help and exit\n";
 }
 
@@ -124,22 +114,23 @@ Config parse_args(int argc, char *argv[])
         {"port",          required_argument, nullptr, 'p'},
         {"interface",     required_argument, nullptr, 'i'},
         {"mode",          required_argument, nullptr, 'm'},
-        {"busy-poll-us",  required_argument, nullptr, OPT_BUSY_POLL_US},
-        {"gpio-chip",     required_argument, nullptr, 'c'},
+        {"busy-poll-us",  required_argument, nullptr, 'b'},
+        {"gpio-chip",     required_argument, nullptr, 'g'},
         {"line",          required_argument, nullptr, 'l'},
-        {"no-rt",         no_argument,       nullptr, OPT_NO_RT},
-        {"cpu",           required_argument, nullptr, OPT_CPU},
-        {"fifo-prio",     required_argument, nullptr, OPT_PRIO},
+        {"no-rt",         no_argument,       nullptr, 'n'},
+        {"cpu",           required_argument, nullptr, 'c'},
+        {"fifo-prio",     required_argument, nullptr, 'f'},
         {"report-every",  required_argument, nullptr, 'r'},
         {"output",        required_argument, nullptr, 'o'},
-        {"samples",       required_argument, nullptr, OPT_SAMPLES},
+        {"samples",       required_argument, nullptr, 's'},
         {"help",          no_argument,       nullptr, 'h'},
         {nullptr,         0,                 nullptr, 0},  // end of array
     };
 
     // Leading ':' → getopt returns ':' for a missing value and '?' for
     // an unknown option, so the two cases can be reported differently.
-    const char* short_options = ":p:i:m:c:l:r:o:h";
+    // "x:" = option takes a value, plain "x" = flag (-n, -h).
+    const char* short_options = ":p:i:m:b:g:l:nc:f:r:o:s:h";
 
     // getopt keeps its state in globals; reset it so parse_args can be
     // called repeatedly (unit tests)
@@ -162,25 +153,25 @@ Config parse_args(int argc, char *argv[])
         case 'm':
             cfg.mode = parse_mode(optarg);
             break;
-        case OPT_BUSY_POLL_US:
+        case 'b':
             cfg.busy_poll_us = parse_number<int>(optarg, "--busy-poll-us", 1, 1'000'000);
             break;
-        case 'c':
+        case 'g':
             cfg.gpio_chip = non_empty(optarg, "--gpio-chip");
             break;
         case 'l':
             cfg.gpio_line = parse_number<unsigned>(
                 optarg, "--line", 0, std::numeric_limits<unsigned>::max());
             break;
-        case OPT_NO_RT:
+        case 'n':
             cfg.realtime = false;
             break;
-        case OPT_CPU:
+        case 'c':
             // 1023 = CPU_SETSIZE - 1; whether the core exists is checked
             // later by sched_setaffinity()
             cfg.cpu = parse_number<int>(optarg, "--cpu", 0, 1023);
             break;
-        case OPT_PRIO:
+        case 'f':
             cfg.priority = parse_number<int>(optarg, "--fifo-prio", 1, 99);
             break;
         case 'r':
@@ -191,7 +182,7 @@ Config parse_args(int argc, char *argv[])
         case 'o':
             cfg.output_csv = non_empty(optarg, "--output");
             break;
-        case OPT_SAMPLES:
+        case 's':
             // upper bound keeps the locked buffer in the order of hundreds of MB
             cfg.max_samples = parse_number<std::size_t>(optarg, "--samples", 1, 10'000'000);
             break;
@@ -201,14 +192,16 @@ Config parse_args(int argc, char *argv[])
         case ':':
             // missing value is always the last argument → argv[optind - 1]
             throw std::invalid_argument(std::string(argv[optind - 1]) + ": missing value");
-        default:  // '?'
-            if (optopt > 0 && optopt < 256) {  // unknown short option
-                throw std::invalid_argument(std::string("unknown option: -") +
-                                            static_cast<char>(optopt));
-            }
-            // long option (optopt is 0, or its val >= 256 for "--no-rt=1"):
+        default: {  // '?'
+            // long option ("--foo", or "--no-rt=1": a flag given a value):
             // getopt has already moved past it → argv[optind - 1]
-            throw std::invalid_argument(std::string("unknown option: ") + argv[optind - 1]);
+            const std::string_view arg = argv[optind - 1];
+            if (arg.starts_with("--")) {
+                throw std::invalid_argument("unknown option: " + std::string(arg));
+            }
+            throw std::invalid_argument(std::string("unknown option: -") +
+                                        static_cast<char>(optopt));
+        }
         }
     }
 

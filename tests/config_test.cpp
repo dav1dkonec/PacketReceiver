@@ -69,7 +69,7 @@ void test_defaults()
 
 void test_short_options()
 {
-    const Config c = parse({"-p", "6000", "-i", "eth1", "-m", "packet", "-c", "/dev/gpiochip4",
+    const Config c = parse({"-p", "6000", "-i", "eth1", "-m", "packet", "-g", "/dev/gpiochip4",
                             "-l", "22", "-r", "500", "-o", "run.csv"});
     CHECK(c.port == 6000);
     CHECK(c.interface == "eth1");
@@ -78,6 +78,19 @@ void test_short_options()
     CHECK(c.gpio_line == 22);
     CHECK(c.report_every == 500);
     CHECK(c.output_csv == "run.csv");
+
+    const Config rt = parse({"-b", "200", "-n", "-c", "2", "-f", "90", "-s", "5000"});
+    CHECK(rt.busy_poll_us == 200);
+    CHECK(!rt.realtime);
+    CHECK(rt.cpu == 2);
+    CHECK(rt.priority == 90);
+    CHECK(rt.max_samples == 5000);
+
+    // value glued to the option (-p6000) and a flag grouped with an option (-nc2)
+    const Config glued = parse({"-p6000", "-nc2"});
+    CHECK(glued.port == 6000);
+    CHECK(!glued.realtime);
+    CHECK(glued.cpu == 2);
 }
 
 void test_long_options()
