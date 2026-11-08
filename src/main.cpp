@@ -14,6 +14,12 @@
 #include <iostream>
 
 int main(int argc, char *argv[]) {
+    // no arguments → show the options instead of measuring with all defaults
+    if (argc <= 1) {
+        print_usage(argv[0]);
+        return 0;
+    }
+
     try {
         const Config cfg = parse_args(argc, argv);
 

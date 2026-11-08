@@ -30,8 +30,8 @@ The default build type is `Release`. On macOS only the portable `rxcore` library
 ## Usage
 
 ```bash
-./build/latency_rx --help
-sudo ./build/latency_rx --mode udp --cpu 3 --prio 80 -o run.csv
+./build/latency_rx                # no arguments: print usage (same as --help)
+sudo ./build/latency_rx --mode udp --cpu 3 --fifo-prio 80 -o run.csv
 ./build/latency_rx --no-rt        # measure without real-time setup
 ```
 
@@ -41,8 +41,8 @@ Main options:
 |---|---|---|
 | `-p, --port` | UDP port of the test packets | 5000 |
 | `-m, --mode` | `udp`, `busy-poll`, `busy-spin`, `packet`, `xdp` | `udp` |
-| `-c, --chip`, `-l, --line` | GPIO chip and line | `/dev/gpiochip0`, 17 (pin 11) |
-| `--no-rt`, `--cpu`, `--prio` | real-time setup (affinity, SCHED_FIFO, mlockall) | on, CPU 3, 80 |
+| `-c, --gpio-chip`, `-l, --line` | GPIO chip and line | `/dev/gpiochip0`, 17 (pin 11) |
+| `--no-rt`, `--cpu`, `--fifo-prio` | real-time setup (affinity, SCHED_FIFO, mlockall) | on, CPU 3, 80 |
 | `-r, --report-every` | print statistics every N packets | 1000 |
 | `-o, --output`, `--samples` | CSV with samples, written at the end of the run | none, 1 000 000 |
 

@@ -83,7 +83,7 @@ void test_short_options()
 void test_long_options()
 {
     const Config c = parse({"--port", "7000", "--mode=busy-poll", "--busy-poll-us", "200",
-                            "--no-rt", "--cpu", "2", "--prio", "90", "--samples", "5000"});
+                            "--no-rt", "--cpu", "2", "--fifo-prio", "90", "--samples", "5000"});
     CHECK(c.port == 7000);
     CHECK(c.mode == RxMode::BusyPoll);
     CHECK(c.busy_poll_us == 200);
@@ -91,6 +91,14 @@ void test_long_options()
     CHECK(c.cpu == 2);
     CHECK(c.priority == 90);
     CHECK(c.max_samples == 5000);
+}
+
+void test_abbreviations()
+{
+    // unambiguous prefixes of long options are accepted by getopt_long
+    CHECK(parse({"--p", "6000"}).port == 6000);
+    CHECK(parse({"--p=6001"}).port == 6001);
+    CHECK(parse({"--f", "90"}).priority == 90);
 }
 
 void test_all_modes()
@@ -106,13 +114,13 @@ void test_range_limits()
 {
     CHECK(parse({"-p", "1"}).port == 1);
     CHECK(parse({"-p", "65535"}).port == 65535);
-    CHECK(parse({"--prio", "1"}).priority == 1);
-    CHECK(parse({"--prio", "99"}).priority == 99);
+    CHECK(parse({"--fifo-prio", "1"}).priority == 1);
+    CHECK(parse({"--fifo-prio", "99"}).priority == 99);
 
     CHECK_THROWS("--port", "-p", "0");
     CHECK_THROWS("--port", "-p", "65536");
-    CHECK_THROWS("--prio", "--prio", "0");
-    CHECK_THROWS("--prio", "--prio", "100");
+    CHECK_THROWS("--fifo-prio", "--fifo-prio", "0");
+    CHECK_THROWS("--fifo-prio", "--fifo-prio", "100");
     CHECK_THROWS("--cpu", "--cpu", "-1");
     CHECK_THROWS("--report-every", "-r", "0");
     CHECK_THROWS("--samples", "--samples", "0");
@@ -130,10 +138,11 @@ void test_invalid_values()
 
 void test_bad_usage()
 {
-    CHECK_THROWS("missing value", "--prio");
+    CHECK_THROWS("missing value", "--fifo-prio");
     CHECK_THROWS("missing value", "-p");
     CHECK_THROWS("unknown option: --foo", "--foo");
     CHECK_THROWS("unknown option: -x", "-x");
+    CHECK_THROWS("unknown option: --no-rt=1", "--no-rt=1");
     CHECK_THROWS("unexpected argument: extra", "extra");
 }
 
@@ -152,6 +161,7 @@ int main()
     test_defaults();
     test_short_options();
     test_long_options();
+    test_abbreviations();
     test_all_modes();
     test_range_limits();
     test_invalid_values();

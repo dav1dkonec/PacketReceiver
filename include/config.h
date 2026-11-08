@@ -59,11 +59,11 @@ struct Config {
  *   -i, --interface <name>  network interface, e.g. eth0
  *   -m, --mode <mode>       udp | busy-poll | busy-spin | packet | xdp
  *       --busy-poll-us <n>  SO_BUSY_POLL budget in microseconds
- *   -c, --chip <path>       GPIO chip device, e.g. /dev/gpiochip0
+ *   -c, --gpio-chip <path>  GPIO chip device, e.g. /dev/gpiochip0
  *   -l, --line <n>          GPIO line offset
  *       --no-rt             disable real-time setup (affinity, SCHED_FIFO, mlockall)
  *       --cpu <n>           CPU core to pin the process to
- *       --prio <n>          SCHED_FIFO priority (1-99)
+ *       --fifo-prio <n>     SCHED_FIFO priority (1-99)
  *   -r, --report-every <n>  print statistics every n packets
  *   -o, --output <file>     save samples to CSV at the end of the run
  *       --samples <n>       capacity of the sample buffer
@@ -80,5 +80,12 @@ struct Config {
  *       with exit code 0; the function does not return in that case.
  */
 Config parse_args(int argc, char* argv[]);
+
+/**
+ * @brief Prints the list of options with their default values to stdout.
+ *
+ * @param prog  Program name shown in the usage line, typically argv[0].
+ */
+void print_usage(const char* prog);
 
 #endif //RECIEVER_CONFIG_H

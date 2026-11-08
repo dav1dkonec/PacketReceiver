@@ -78,6 +78,7 @@ std::string non_empty(const char* text, std::string_view option)
     return text;
 }
 
+} // namespace
 
 void print_usage(const char* prog)
 {
@@ -91,12 +92,12 @@ void print_usage(const char* prog)
         << to_string(def.mode) << ")\n"
         << "      --busy-poll-us <n>  SO_BUSY_POLL budget in us (default " << def.busy_poll_us << ")\n"
         << "\nGPIO:\n"
-        << "  -c, --chip <path>       GPIO chip device (default " << def.gpio_chip << ")\n"
+        << "  -c, --gpio-chip <path>  GPIO chip device (default " << def.gpio_chip << ")\n"
         << "  -l, --line <n>          GPIO line offset (default " << def.gpio_line << ")\n"
         << "\nReal-time:\n"
         << "      --no-rt             disable real-time setup\n"
         << "      --cpu <n>           CPU core to pin to (default " << def.cpu << ")\n"
-        << "      --prio <n>          SCHED_FIFO priority 1-99 (default " << def.priority << ")\n"
+        << "      --fifo-prio <n>     SCHED_FIFO priority 1-99 (default " << def.priority << ")\n"
         << "\nResults:\n"
         << "  -r, --report-every <n>  print statistics every n packets (default "
         << def.report_every << ")\n"
@@ -104,8 +105,6 @@ void print_usage(const char* prog)
         << "      --samples <n>       sample buffer capacity (default " << def.max_samples << ")\n"
         << "\n  -h, --help              print this help and exit\n";
 }
-
-} // namespace
 
 std::string_view to_string(RxMode mode)
 {
@@ -126,11 +125,11 @@ Config parse_args(int argc, char *argv[])
         {"interface",     required_argument, nullptr, 'i'},
         {"mode",          required_argument, nullptr, 'm'},
         {"busy-poll-us",  required_argument, nullptr, OPT_BUSY_POLL_US},
-        {"chip",          required_argument, nullptr, 'c'},
+        {"gpio-chip",     required_argument, nullptr, 'c'},
         {"line",          required_argument, nullptr, 'l'},
         {"no-rt",         no_argument,       nullptr, OPT_NO_RT},
         {"cpu",           required_argument, nullptr, OPT_CPU},
-        {"prio",          required_argument, nullptr, OPT_PRIO},
+        {"fifo-prio",     required_argument, nullptr, OPT_PRIO},
         {"report-every",  required_argument, nullptr, 'r'},
         {"output",        required_argument, nullptr, 'o'},
         {"samples",       required_argument, nullptr, OPT_SAMPLES},
@@ -167,7 +166,7 @@ Config parse_args(int argc, char *argv[])
             cfg.busy_poll_us = parse_number<int>(optarg, "--busy-poll-us", 1, 1'000'000);
             break;
         case 'c':
-            cfg.gpio_chip = non_empty(optarg, "--chip");
+            cfg.gpio_chip = non_empty(optarg, "--gpio-chip");
             break;
         case 'l':
             cfg.gpio_line = parse_number<unsigned>(
@@ -182,7 +181,7 @@ Config parse_args(int argc, char *argv[])
             cfg.cpu = parse_number<int>(optarg, "--cpu", 0, 1023);
             break;
         case OPT_PRIO:
-            cfg.priority = parse_number<int>(optarg, "--prio", 1, 99);
+            cfg.priority = parse_number<int>(optarg, "--fifo-prio", 1, 99);
             break;
         case 'r':
             // 0 is rejected: received % report_every would divide by zero
@@ -203,10 +202,12 @@ Config parse_args(int argc, char *argv[])
             // missing value is always the last argument → argv[optind - 1]
             throw std::invalid_argument(std::string(argv[optind - 1]) + ": missing value");
         default:  // '?'
-            if (optopt != 0) {  // unknown short option
+            if (optopt > 0 && optopt < 256) {  // unknown short option
                 throw std::invalid_argument(std::string("unknown option: -") +
                                             static_cast<char>(optopt));
             }
+            // long option (optopt is 0, or its val >= 256 for "--no-rt=1"):
+            // getopt has already moved past it → argv[optind - 1]
             throw std::invalid_argument(std::string("unknown option: ") + argv[optind - 1]);
         }
     }
