@@ -7,7 +7,6 @@
 // Zlaté pravidlo: mezi návratem z recv() a přepnutím GPIO nesmí být nic
 // dalšího – žádný výpis, žádná kontrola, žádná alokace. Všechno, co tam
 // dáš, se započítá do měřené latence.
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 
 }
