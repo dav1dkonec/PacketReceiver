@@ -142,6 +142,14 @@ Config parse_args(int argc, char *argv[])
     // an unknown option, so the two cases can be reported differently.
     const char* short_options = ":p:i:m:c:l:r:o:h";
 
+    // getopt keeps its state in globals; reset it so parse_args can be
+    // called repeatedly (unit tests)
+#ifdef __GLIBC__
+    optind = 0;    // glibc: 0 = full reset
+#else
+    optreset = 1;  // BSD / macOS
+    optind = 1;
+#endif
     opterr = 0;  // errors are reported via exceptions
     int opt;
     while ((opt = getopt_long(argc, argv, short_options, long_options, nullptr)) != -1) {

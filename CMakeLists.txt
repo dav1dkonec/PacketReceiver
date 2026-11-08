@@ -24,6 +24,15 @@ add_library(rxcore STATIC
 target_include_directories(rxcore PUBLIC include)
 
 # ---------------------------------------------------------------------------
+# tests: run with `ctest --test-dir build`
+# ---------------------------------------------------------------------------
+enable_testing()
+
+add_executable(config_test tests/config_test.cpp)
+target_link_libraries(config_test PRIVATE rxcore)
+add_test(NAME config COMMAND config_test)
+
+# ---------------------------------------------------------------------------
 # latency_rx: the receiver itself, Linux only (libgpiod, sched_*, AF_PACKET)
 # ---------------------------------------------------------------------------
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
