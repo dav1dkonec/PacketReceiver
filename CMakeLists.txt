@@ -40,10 +40,16 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # GpioToggle uses the libgpiod v2 C++ API (gpiod::line_request, ...)
     pkg_check_modules(GPIOD REQUIRED IMPORTED_TARGET "libgpiodcxx>=2.0")
 
-    add_executable(latency_rx
-        src/main.cpp
-    )
-    target_link_libraries(latency_rx PRIVATE rxcore PkgConfig::GPIOD)
+    # rxgpio: GpioToggle, kept out of rxcore so that rxcore still builds on macOS
+    add_library(rxgpio STATIC src/gpio_toggle.cpp)
+    target_link_libraries(rxgpio PUBLIC rxcore PkgConfig::GPIOD)
+
+    add_executable(latency_rx src/main.cpp)
+    target_link_libraries(latency_rx PRIVATE rxgpio)
+
+    # gpio_bench: average cost of one toggle, and a test signal for the wire loop
+    add_executable(gpio_bench tools/gpio_bench.cpp)
+    target_link_libraries(gpio_bench PRIVATE rxgpio)
 else()
-    message(STATUS "${CMAKE_SYSTEM_NAME}: building rxcore only, latency_rx needs Linux + libgpiod")
+    message(STATUS "${CMAKE_SYSTEM_NAME}: building rxcore only, latency_rx and gpio_bench need Linux + libgpiod")
 endif()

@@ -55,6 +55,7 @@ Without them the program exits with an error. Use `--no-rt` to measure without R
 ```
 include/   module headers (config.h, ...)
 src/       implementation and main.cpp
+tools/     helper programs (gpio_bench)
 ```
 
 ## Status
