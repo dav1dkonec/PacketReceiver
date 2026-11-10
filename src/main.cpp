@@ -12,6 +12,12 @@
 
 #include <exception>
 #include <iostream>
+#include <cerrno>
+#include <system_error>
+
+#include "gpio_toggle.h"
+#include "udp_socket.h"
+#include "stats.h"
 
 int main(int argc, char *argv[]) {
     // no arguments → show the options instead of measuring with all defaults
@@ -31,7 +37,28 @@ int main(int argc, char *argv[]) {
                   << " (cpu " << cfg.cpu << ", prio " << cfg.priority << ")\n"
                   << "output " << (cfg.output_csv.empty() ? "-" : cfg.output_csv) << "\n";
 
-        // TODO: setup_realtime, GpioToggle, socket, receive loop
+        // TODO: setup_realtime (step 6)
+        GpioToggle gpio(cfg.gpio_chip, cfg.gpio_line);
+        UdpSocket sock(cfg.port);
+        Stats stats;
+        unsigned char buf[MAX_DATA_SIZE];
+
+        std::cout << "listening on UDP port " << cfg.port << '\n';
+        for (;;) {
+            const ssize_t n = sock.receive(buf, sizeof buf);
+            gpio.toggle();  // GOLDEN RULE: nothing between recv() and toggle()
+
+            if (n < 0) {
+                if (errno == EINTR) {
+                    continue; // interrupted by a signal (will be handling SIGINT in future)
+                }
+                throw std::system_error(errno, std::generic_category(), "recv");
+            }
+            stats.on_packet(buf, static_cast<size_t>(n));
+            if (stats.received % cfg.report_every == 0) {
+                stats.print(std::cout);
+            }
+        }
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n"
                   << "Try '" << argv[0] << " --help'.\n";

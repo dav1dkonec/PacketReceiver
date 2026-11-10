@@ -10,6 +10,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#define MAX_DATA_SIZE 2048 // > MTU (1500B) - leave it some additional space
+
 /// UDP socket bound to a port on all interfaces (RAII, closed in the destructor)
 class UdpSocket {
 public:
