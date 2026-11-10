@@ -10,11 +10,10 @@
 #include <cstddef>
 #include <cstdint>
 
-#define MAX_DATA_SIZE 2048 // > MTU (1500B) - leave it some additional space
-
 /// UDP socket bound to a port on all interfaces (RAII, closed in the destructor)
 class UdpSocket {
 public:
+    static constexpr std::size_t kMaxDatagram = 2048;  // > MTU (1500 B)
     /// @throws std::system_error if the socket can't be created or bound
     ///         (port already in use, port < 1024 without CAP_NET_BIND_SERVICE)
     explicit UdpSocket(uint16_t port);

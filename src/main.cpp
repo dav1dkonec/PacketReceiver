@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
         GpioToggle gpio(cfg.gpio_chip, cfg.gpio_line);
         UdpSocket sock(cfg.port);
         Stats stats;
-        unsigned char buf[MAX_DATA_SIZE];
+        unsigned char buf[UdpSocket::kMaxDatagram];
 
         std::cout << "listening on UDP port " << cfg.port << '\n';
         for (;;) {
