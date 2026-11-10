@@ -20,6 +20,8 @@ add_compile_options(-Wall -Wextra -Wpedantic)
 # ---------------------------------------------------------------------------
 add_library(rxcore STATIC
     src/config.cpp
+    src/udp_socket.cpp
+    src/stats.cpp
 )
 target_include_directories(rxcore PUBLIC include)
 
