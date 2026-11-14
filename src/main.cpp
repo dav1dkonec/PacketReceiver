@@ -44,7 +44,7 @@ void install_stop_handler()
 uint64_t realtime_ns()
 {
     timespec ts{};
-    clock_gettime(CLOCK_REALTIME, &ts);  // same clock as SO_TIMESTAMPNS (step 5)
+    clock_gettime(CLOCK_REALTIME, &ts);  // same clock as SO_TIMESTAMPNS
     return static_cast<uint64_t>(ts.tv_sec) * 1'000'000'000ULL
            + static_cast<uint64_t>(ts.tv_nsec);
 }
@@ -107,8 +107,10 @@ int main(int argc, char *argv[]) {
 
             // timestamp first, as close to the GPIO edge as possible
             const uint64_t user_ns = realtime_ns();
+            const uint64_t kernel_ns = sock.last_rx_timestamp_ns();
             const int64_t seq = stats.on_packet(buf, static_cast<std::size_t>(n));
-            log.add({seq, user_ns});
+            stats.on_latency(kernel_ns, user_ns);
+            log.add({seq, kernel_ns, user_ns});
 
             // a packet arriving while printing waits longer (large -r avoids it)
             if (stats.received % cfg.report_every == 0) {

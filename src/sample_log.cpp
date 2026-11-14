@@ -4,9 +4,10 @@
 
 void SampleLog::write_csv(std::ostream& out) const
 {
-    out << "index,seq,user_ns\n";
+    out << "index,seq,kernel_ns,user_ns\n";
     for (std::size_t i = 0; i < count_; ++i) {
-        out << i << ',' << samples_[i].seq << ',' << samples_[i].user_ns << '\n';
+        const Sample& s = samples_[i];
+        out << i << ',' << s.seq << ',' << s.kernel_ns << ',' << s.user_ns << '\n';
     }
 
     // buffered data is written here: check after it (e.g. disk full)
