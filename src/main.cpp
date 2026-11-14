@@ -96,10 +96,11 @@ int main(int argc, char *argv[]) {
             gpio.toggle();  // GOLDEN RULE: nothing between recv() and toggle()
 
             if (n < 0) {
-                // EINTR, but errno may be overwritten by toggle(): test g_stop.
+                // EINTR from the stop signal → the while condition ends the loop.
+                // errno is not read because toggle() ran after recv().
                 // This made one extra edge, discarded in the evaluation.
                 if (g_stop) {
-                    break;
+                    continue;
                 }
                 throw std::system_error(errno, std::generic_category(), "recv");
             }
