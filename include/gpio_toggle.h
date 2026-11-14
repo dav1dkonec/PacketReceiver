@@ -10,6 +10,8 @@
 
 /// One GPIO output line, held for the lifetime of the object (RAII).
 /// toggle() is the only call on the hot path: one ioctl, no allocation.
+/// On release the line stays an output with its last value; the constructor
+/// sets it low, so startup may produce one falling edge.
 class GpioToggle {
 public:
     /// Requests @p line on @p chip as an output, initially low.

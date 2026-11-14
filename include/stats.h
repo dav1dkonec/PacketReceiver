@@ -17,7 +17,8 @@ struct Stats {
   uint64_t reordered = 0;   // seq lower than expected (late or duplicate)
 
   /// Validates one datagram and updates the counters.
-  void on_packet(const unsigned char* data, std::size_t len);
+  /// @return its sequence number, or -1 if it is not a valid test packet
+  int64_t on_packet(const unsigned char* data, std::size_t len);
 
   void print(std::ostream& out) const;
 

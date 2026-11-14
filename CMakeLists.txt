@@ -22,6 +22,7 @@ add_library(rxcore STATIC
     src/config.cpp
     src/udp_socket.cpp
     src/stats.cpp
+    src/sample_log.cpp
 )
 target_include_directories(rxcore PUBLIC include)
 
