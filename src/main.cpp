@@ -15,6 +15,7 @@
 #include <system_error>
 
 #include "gpio_toggle.h"
+#include "realtime.h"
 #include "sample_log.h"
 #include "stats.h"
 #include "udp_socket.h"
@@ -78,7 +79,6 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        // TODO: setup_realtime (step 6)
         install_stop_handler();
 
         GpioToggle gpio(cfg.gpio_chip, cfg.gpio_line);
@@ -88,6 +88,13 @@ int main(int argc, char *argv[]) {
         SampleLog log(cfg.output_csv.empty() ? 0 : cfg.max_samples);
         // > MTU: oversized datagrams are reported as invalid, not cut to 16 B
         unsigned char buf[UdpSocket::kMaxDatagram];
+
+        // last, after all allocations: mlockall locks them, setup runs non-RT
+        if (cfg.realtime) {
+            setup_realtime(cfg.cpu, cfg.priority);
+            std::cout << "RT: cpu " << cfg.cpu << ", SCHED_FIFO " << cfg.priority
+                      << ", memory locked\n";
+        }
 
         std::cout << "listening on UDP port " << cfg.port << " (Ctrl+C to stop)\n";
         // a signal just before recv() starts is noticed only after the next packet

@@ -65,5 +65,5 @@ tools/     helper programs (gpio_bench)
 - [x] UDP socket receive, statistics
 - [x] shutdown (SIGINT) and CSV output
 - [x] kernel software timestamps (`SO_TIMESTAMPNS`)
-- [ ] real-time setup
+- [x] real-time setup
 - [ ] additional receive modes (busy poll, AF_PACKET, optionally XDP)
