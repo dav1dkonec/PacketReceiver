@@ -11,12 +11,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <ctime>         // timespec
+#include <span>
 
 /// UDP socket bound to a port on all interfaces (RAII, closed in the destructor)
 class UdpSocket {
 public:
-    static constexpr std::size_t kMaxDatagram = 2048;  // > MTU (1500 B)
-
     /// Binds @p port and enables kernel RX timestamps (SO_TIMESTAMPNS, Linux only).
     /// @throws std::system_error if the socket can't be created or bound
     ///         (port already in use, port < 1024 without CAP_NET_BIND_SERVICE)
@@ -34,6 +33,12 @@ public:
         iov_ = {buf, len};
         msg_.msg_controllen = sizeof control_;  // in: space, out: used size → reset each call
         return ::recvmsg(fd_, &msg_, 0);
+    }
+
+    /// The whole datagram is the payload (the kernel already stripped IP/UDP headers).
+    static std::span<const unsigned char> payload(const unsigned char* buf, std::size_t n)
+    {
+        return {buf, n};
     }
 
     /// Kernel RX timestamp of the last datagram (CLOCK_REALTIME ns), 0 if missing.

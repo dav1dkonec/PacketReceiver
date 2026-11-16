@@ -47,7 +47,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_library(rxgpio STATIC src/gpio_toggle.cpp)
     target_link_libraries(rxgpio PUBLIC rxcore PkgConfig::GPIOD)
 
-    add_executable(latency_rx src/main.cpp src/realtime.cpp)
+    add_executable(latency_rx src/main.cpp src/realtime.cpp src/stop_signal.cpp)
     target_link_libraries(latency_rx PRIVATE rxgpio)
 
     # gpio_bench: average cost of one toggle, and a test signal for the wire loop
