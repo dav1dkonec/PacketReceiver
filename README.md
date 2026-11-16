@@ -66,4 +66,4 @@ tools/     helper programs (gpio_bench)
 - [x] shutdown (SIGINT) and CSV output
 - [x] kernel software timestamps (`SO_TIMESTAMPNS`)
 - [x] real-time setup
-- [ ] additional receive modes (busy poll, AF_PACKET, optionally XDP)
+- [x] additional receive modes: busy poll, busy spin, AF_PACKET (XDP: not supported by the Pi kernel, no AF_XDP)

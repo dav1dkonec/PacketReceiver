@@ -12,6 +12,7 @@
 #include <string>
 
 #include "gpio_toggle.h"
+#include "packet_socket.h"
 #include "realtime.h"
 #include "rx_loop.h"
 #include "sample_log.h"
@@ -82,8 +83,11 @@ int main(int argc, char *argv[]) {
             napi_id = sock.napi_id();
             break;
         }
-        case RxMode::Packet:
-            throw std::runtime_error("mode " + std::string(to_string(cfg.mode)) + " not implemented yet");
+        case RxMode::Packet: {
+            PacketSocket sock(cfg.interface, cfg.port);
+            run_loop(sock, gpio, cfg, stats, log);
+            break;
+        }
         case RxMode::Xdp:
             throw std::runtime_error("mode xdp: kernel has no AF_XDP support (CONFIG_XDP_SOCKETS)");
         }

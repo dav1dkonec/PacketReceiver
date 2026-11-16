@@ -23,6 +23,7 @@ add_library(rxcore STATIC
     src/udp_socket.cpp
     src/stats.cpp
     src/sample_log.cpp
+    src/recvmsg_socket.cpp
 )
 target_include_directories(rxcore PUBLIC include)
 
@@ -47,8 +48,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_library(rxgpio STATIC src/gpio_toggle.cpp)
     target_link_libraries(rxgpio PUBLIC rxcore PkgConfig::GPIOD)
 
-    add_executable(latency_rx src/main.cpp src/realtime.cpp src/stop_signal.cpp)
+    add_executable(latency_rx src/main.cpp src/realtime.cpp src/stop_signal.cpp
+                              src/packet_socket.cpp)
     target_link_libraries(latency_rx PRIVATE rxgpio)
+    # resolve all shared-library symbols at startup, not on the first call
+    # (lazy PLT binding would slow down the first packet)
+    target_link_options(latency_rx PRIVATE "LINKER:-z,now")
 
     # gpio_bench: average cost of one toggle, and a test signal for the wire loop
     add_executable(gpio_bench tools/gpio_bench.cpp)
