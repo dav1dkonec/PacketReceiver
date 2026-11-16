@@ -8,7 +8,7 @@
 extern volatile std::sig_atomic_t g_stop;
 
 /// Installs the SIGINT/SIGTERM handler that sets g_stop.
-/// Without SA_RESTART, so a blocked recv() returns EINTR; a second signal kills.
+/// Without SA_RESTART, so a blocked recv() returns EINTR; a second SIGINT kills.
 void install_stop_handler();
 
 #endif // LATENCY_RX_STOP_SIGNAL_H
