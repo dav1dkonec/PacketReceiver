@@ -5,6 +5,7 @@
 
 #include <cerrno>
 #include <cstddef>
+#include <fstream>
 #include <string>
 #include <system_error>
 
@@ -55,4 +56,11 @@ void setup_realtime(int cpu, int priority)
     if (sched_setscheduler(0, SCHED_FIFO, &sp) != 0) {
         fail("sched_setscheduler(SCHED_FIFO " + std::to_string(priority) + ")");
     }
+}
+
+bool rt_throttling_enabled()
+{
+    std::ifstream f("/proc/sys/kernel/sched_rt_runtime_us");
+    long runtime_us = -1;
+    return f >> runtime_us && runtime_us >= 0;  // -1 = throttling off
 }

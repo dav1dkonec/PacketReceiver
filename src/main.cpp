@@ -12,8 +12,10 @@
 #include <string>
 
 #include "gpio_toggle.h"
+#include "realtime.h"
 #include "rx_loop.h"
 #include "sample_log.h"
+#include "spin_udp_socket.h"
 #include "stats.h"
 #include "stop_signal.h"
 #include "udp_socket.h"
@@ -52,14 +54,34 @@ int main(int argc, char *argv[]) {
         // without --output nothing is saved, so nothing is allocated
         SampleLog log(cfg.output_csv.empty() ? 0 : cfg.max_samples);
 
+        unsigned napi_id = 0;  // read after the loop, from the last packet
+
         switch (cfg.mode) {
         case RxMode::Udp: {
             UdpSocket sock(cfg.port);
             run_loop(sock, gpio, cfg, stats, log);
+            napi_id = sock.napi_id();
             break;
         }
-        case RxMode::BusyPoll:
-        case RxMode::BusySpin:
+        case RxMode::BusyPoll: {
+            UdpSocket sock(cfg.port, cfg.busy_poll_us);
+            std::cout << "busy poll " << cfg.busy_poll_us
+                      << " us (no effect if packets are further apart)\n";
+            run_loop(sock, gpio, cfg, stats, log);
+            napi_id = sock.napi_id();
+            break;
+        }
+        case RxMode::BusySpin: {
+            SpinUdpSocket sock(cfg.port);
+            if (cfg.realtime && rt_throttling_enabled()) {
+                std::cout << "warning: RT throttling on, the spinning task is paused up to 50 ms/s "
+                             "when other tasks run on this CPU "
+                             "(echo -1 > /proc/sys/kernel/sched_rt_runtime_us)\n";
+            }
+            run_loop(sock, gpio, cfg, stats, log);
+            napi_id = sock.napi_id();
+            break;
+        }
         case RxMode::Packet:
             throw std::runtime_error("mode " + std::string(to_string(cfg.mode)) + " not implemented yet");
         case RxMode::Xdp:
@@ -69,6 +91,10 @@ int main(int argc, char *argv[]) {
         // a second Ctrl+C now kills at once, possibly truncating the CSV
         std::cout << "\nstopped\n";
         stats.print(std::cout);
+        // 0 = loopback or no NAPI: busy polling had nothing to poll
+        if (cfg.mode != RxMode::Packet) {
+            std::cout << "napi id " << napi_id << '\n';
+        }
         if (!cfg.output_csv.empty()) {
             log.write_csv(csv);
             std::cout << "wrote " << log.size() << " samples to " << cfg.output_csv << '\n';

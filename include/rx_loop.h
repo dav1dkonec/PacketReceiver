@@ -4,6 +4,7 @@
 #include <sys/types.h>  // ssize_t
 
 #include <cerrno>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <ctime>
@@ -26,14 +27,20 @@ inline uint64_t realtime_ns()
            + static_cast<uint64_t>(ts.tv_nsec);
 }
 
+/// What run_loop needs from a receive mode.
+template <class R>
+concept Receiver = requires(R& r, void* buf, const unsigned char* data, std::size_t len) {
+    // blocks or spins; -1 with EINTR (or g_stop set) on a stop signal
+    { r.receive(buf, len) } -> std::same_as<ssize_t>;
+    { r.last_rx_timestamp_ns() } -> std::same_as<uint64_t>;
+    // test packet inside the received bytes (empty if malformed)
+    { r.payload(data, len) } -> std::same_as<std::span<const unsigned char>>;
+};
+
 /// Receive loop shared by all modes; runs until SIGINT/SIGTERM.
 /// A template, not a virtual interface: each mode gets its own copy with
 /// rx.receive() inlined, so no indirect call sits before the toggle.
-/// Rx provides:
-///   ssize_t  receive(void* buf, size_t len)   -1 with EINTR on a signal
-///   uint64_t last_rx_timestamp_ns()
-///   std::span<const unsigned char> payload(const unsigned char* buf, size_t n)
-template <class Rx>
+template <Receiver Rx>
 void run_loop(Rx& rx, GpioToggle& gpio, const Config& cfg, Stats& stats, SampleLog& log)
 {
     // > MTU (1500 B): oversized datagrams are reported as invalid, not cut to 16 B
