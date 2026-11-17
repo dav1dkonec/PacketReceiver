@@ -65,6 +65,18 @@ void test_defaults()
     CHECK(c.realtime == def.realtime);
     CHECK(c.cpu == def.cpu);
     CHECK(c.output_csv.empty());
+    CHECK(c.bind_address.empty());
+}
+
+void test_bind()
+{
+    CHECK(parse({"-a", "192.168.50.2"}).bind_address == "192.168.50.2");
+    CHECK(parse({"--bind=192.168.50.2", "-m", "busy-spin"}).bind_address == "192.168.50.2");
+    CHECK_THROWS("invalid IPv4 address '192.168.50'", "-a", "192.168.50");
+    CHECK_THROWS("invalid IPv4 address 'pi'", "--bind", "pi");
+    // checked after all options, so both orders fail
+    CHECK_THROWS("--bind: only for UDP modes", "-a", "192.168.50.2", "-m", "packet");
+    CHECK_THROWS("--bind: only for UDP modes", "-m", "xdp", "-a", "192.168.50.2");
 }
 
 void test_short_options()
@@ -173,6 +185,7 @@ int main()
 {
     test_defaults();
     test_short_options();
+    test_bind();
     test_long_options();
     test_abbreviations();
     test_all_modes();

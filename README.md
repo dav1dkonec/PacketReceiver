@@ -40,6 +40,8 @@ Main options:
 | option | meaning | default |
 |---|---|---|
 | `-p, --port` | UDP port of the test packets | 5000 |
+| `-a, --bind` | UDP modes: receive only on this local IPv4 address | all interfaces |
+| `-i, --interface` | packet mode: network interface | `eth0` |
 | `-m, --mode` | `udp`, `busy-poll`, `busy-spin`, `packet`, `xdp` | `udp` |
 | `-b, --busy-poll-us` | SO_BUSY_POLL budget in microseconds (busy-poll mode) | 50 |
 | `-g, --gpio-chip`, `-l, --line` | GPIO chip and line | `/dev/gpiochip0`, 17 (pin 11) |

@@ -30,6 +30,7 @@ struct Config {
     // network
     uint16_t port = 5000; // UDP port for packet testing
     std::string interface = "eth0"; // used by packet / xdp modes
+    std::string bind_address; // UDP modes: local IPv4 to bind, empty = all interfaces
     RxMode mode = RxMode::Udp; // receive method
     int busy_poll_us = 50; // SO_BUSY_POLL budget in us (busy-poll mode)
 
@@ -57,6 +58,7 @@ struct Config {
  * Supported options:
  *   -p, --port <n>          UDP port (1-65535)
  *   -i, --interface <name>  network interface, e.g. eth0
+ *   -a, --bind <ipv4>       local address for the UDP modes, e.g. 192.168.50.2
  *   -m, --mode <mode>       udp | busy-poll | busy-spin | packet | xdp
  *   -b, --busy-poll-us <n>  SO_BUSY_POLL budget in microseconds
  *   -g, --gpio-chip <path>  GPIO chip device, e.g. /dev/gpiochip0
@@ -73,8 +75,9 @@ struct Config {
  * @param argv  Argument vector, as passed to main().
  * @return      Configuration with defaults overridden by the given options.
  *
- * @throws std::invalid_argument  Unknown option, missing value, or a value
- *                                that is not a number / out of range.
+ * @throws std::invalid_argument  Unknown option, missing value, a value
+ *                                that is not a number / out of range,
+ *                                or --bind combined with packet / xdp mode.
  *
  * @note `--help` prints usage to stdout and terminates the program
  *       with exit code 0; the function does not return in that case.

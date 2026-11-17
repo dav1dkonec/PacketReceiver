@@ -33,6 +33,7 @@ int main(int argc, char *argv[]) {
 
         std::cout << "latency_rx: mode " << to_string(cfg.mode)
                   << ", UDP port " << cfg.port
+                  << (cfg.bind_address.empty() ? "" : " on " + cfg.bind_address)
                   << ", interface " << cfg.interface << "\n"
                   << "GPIO " << cfg.gpio_chip << " line " << cfg.gpio_line << "\n"
                   << "RT " << (cfg.realtime ? "on" : "off")
@@ -59,13 +60,13 @@ int main(int argc, char *argv[]) {
 
         switch (cfg.mode) {
         case RxMode::Udp: {
-            UdpSocket sock(cfg.port);
+            UdpSocket sock(cfg.port, cfg.bind_address);
             run_loop(sock, gpio, cfg, stats, log);
             napi_id = sock.napi_id();
             break;
         }
         case RxMode::BusyPoll: {
-            UdpSocket sock(cfg.port, cfg.busy_poll_us);
+            UdpSocket sock(cfg.port, cfg.bind_address, cfg.busy_poll_us);
             std::cout << "busy poll " << cfg.busy_poll_us
                       << " us (no effect if packets are further apart)\n";
             run_loop(sock, gpio, cfg, stats, log);
@@ -73,7 +74,7 @@ int main(int argc, char *argv[]) {
             break;
         }
         case RxMode::BusySpin: {
-            SpinUdpSocket sock(cfg.port);
+            SpinUdpSocket sock(cfg.port, cfg.bind_address);
             if (cfg.realtime && rt_throttling_enabled()) {
                 std::cout << "warning: RT throttling on, the spinning task is paused up to 50 ms/s "
                              "when other tasks run on this CPU "

@@ -3,7 +3,9 @@
 //
 
 #include "config.h"
+#include <arpa/inet.h>  // inet_pton
 #include <getopt.h>
+#include <netinet/in.h>
 #include <charconv>
 #include <cstdlib>
 #include <iostream>
@@ -68,6 +70,16 @@ std::string non_empty(const char* text, std::string_view option)
     return text;
 }
 
+std::string ipv4(const char* text, std::string_view option)
+{
+    in_addr addr{};
+    if (::inet_pton(AF_INET, text, &addr) != 1) {
+        throw std::invalid_argument(std::string(option) + ": invalid IPv4 address '" +
+                                    std::string(text) + "'");
+    }
+    return text;
+}
+
 } // namespace
 
 void print_usage(const char* prog)
@@ -78,6 +90,7 @@ void print_usage(const char* prog)
         << "\nNetwork:\n"
         << "  -p, --port <n>          UDP port (default " << def.port << ")\n"
         << "  -i, --interface <name>  network interface (default " << def.interface << ")\n"
+        << "  -a, --bind <ipv4>       UDP modes: receive only on this local address (default: all)\n"
         << "  -m, --mode <mode>       udp | busy-poll | busy-spin | packet | xdp (default "
         << to_string(def.mode) << ")\n"
         << "  -b, --busy-poll-us <n>  SO_BUSY_POLL budget in us (default " << def.busy_poll_us << ")\n"
@@ -113,6 +126,7 @@ Config parse_args(int argc, char *argv[])
     static const option long_options[] = {
         {"port",          required_argument, nullptr, 'p'},
         {"interface",     required_argument, nullptr, 'i'},
+        {"bind",          required_argument, nullptr, 'a'},
         {"mode",          required_argument, nullptr, 'm'},
         {"busy-poll-us",  required_argument, nullptr, 'b'},
         {"gpio-chip",     required_argument, nullptr, 'g'},
@@ -130,7 +144,7 @@ Config parse_args(int argc, char *argv[])
     // Leading ':' → getopt returns ':' for a missing value and '?' for
     // an unknown option, so the two cases can be reported differently.
     // "x:" = option takes a value, plain "x" = flag (-n, -h).
-    const char* short_options = ":p:i:m:b:g:l:nc:f:r:o:s:h";
+    const char* short_options = ":p:i:a:m:b:g:l:nc:f:r:o:s:h";
 
     // getopt keeps its state in globals; reset it so parse_args can be
     // called repeatedly (unit tests)
@@ -149,6 +163,9 @@ Config parse_args(int argc, char *argv[])
             break;
         case 'i':
             cfg.interface = non_empty(optarg, "--interface");
+            break;
+        case 'a':
+            cfg.bind_address = ipv4(optarg, "--bind");
             break;
         case 'm':
             cfg.mode = parse_mode(optarg);
@@ -207,6 +224,12 @@ Config parse_args(int argc, char *argv[])
 
     if (optind < argc) {
         throw std::invalid_argument(std::string("unexpected argument: ") + argv[optind]);
+    }
+
+    // after the loop: the option order must not matter
+    if (!cfg.bind_address.empty() && (cfg.mode == RxMode::Packet || cfg.mode == RxMode::Xdp)) {
+        throw std::invalid_argument("--bind: only for UDP modes, " + std::string(to_string(cfg.mode)) +
+                                    " mode is bound by --interface");
     }
     return cfg;
 }

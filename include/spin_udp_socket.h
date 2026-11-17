@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string>
 
 #include "stop_signal.h"
 #include "udp_socket.h"
@@ -17,7 +18,7 @@
 /// the core runs at 100 %.
 class SpinUdpSocket {
 public:
-    explicit SpinUdpSocket(uint16_t port) : sock_(port) {}
+    SpinUdpSocket(uint16_t port, const std::string& address) : sock_(port, address) {}
 
     /// Spins until a datagram arrives or g_stop is set (then -1).
     ssize_t receive(void* buf, std::size_t len)
