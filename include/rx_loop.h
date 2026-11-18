@@ -43,7 +43,7 @@ concept Receiver = requires(R& r, void* buf, const unsigned char* data, std::siz
 template <Receiver Rx>
 void run_loop(Rx& rx, GpioToggle& gpio, const Config& cfg, Stats& stats, SampleLog& log)
 {
-    // > MTU (1500 B): oversized datagrams are reported as invalid, not cut to 16 B
+    // > MTU (1500 B): holds the largest test packet (header + padding)
     unsigned char buf[2048];
 
     // last, after all allocations: mlockall locks them, setup runs non-RT

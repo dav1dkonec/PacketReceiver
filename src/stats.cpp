@@ -14,7 +14,7 @@ int64_t Stats::on_packet(const unsigned char* data, std::size_t len)
     ++received;
 
     test_packet pkt;
-    if (len != sizeof pkt) {
+    if (len < sizeof pkt) {  // longer is fine: padding after the header
         ++invalid;
         return -1;
     }

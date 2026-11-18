@@ -12,7 +12,7 @@
 /// Packet counters, updated after the GPIO toggle (never on the hot path).
 struct Stats {
   uint64_t received  = 0;   // every datagram, valid or not (= number of GPIO edges)
-  uint64_t invalid   = 0;   // wrong size or magic
+  uint64_t invalid   = 0;   // too short or wrong magic
   uint64_t lost      = 0;   // gaps in seq
   uint64_t reordered = 0;   // seq lower than expected (late or duplicate)
 

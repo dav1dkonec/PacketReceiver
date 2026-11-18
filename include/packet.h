@@ -11,6 +11,10 @@
 // Valid C and C++: plain struct, <stdint.h>, no namespaces or classes.
 // All fields are sent in network byte order (big endian), use
 // tp_hton32/64 when filling the packet and tp_ntoh32/64 when reading it.
+//
+// The UDP payload starts with this header and may be longer (padding, ignored
+// by the receiver): a frame length of its own lets the wire probe tell test
+// packets from ARP and other traffic.
 // ---------------------------------------------------------------------------
 
 #include <assert.h>   // static_assert in C11
